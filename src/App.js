@@ -10,7 +10,7 @@ function App(){
         description:"",
         due_date:"",
     })
-
+    const [selectedTodo, setSelectedTodo] = useState(null)
     useEffect(() => {
         setTodos([
             {
@@ -63,8 +63,65 @@ function App(){
             description: "",
             due_date: ""
         })
+
+
     }
 
+    const handleSelectTodo = (id) => {
+        if(selectedTodo === id){
+            setSelectedTodo(null);
+        }else {
+            setSelectedTodo(id);
+        }
+    }
+
+    const handleDeleteTodo = (id) => {
+        const comfirmed = window.confirm("Bạn có chắc chắn muốn xóa todo này?")
+        if(comfirmed){
+            setTodos(todos.filter((todo)=>todo.id != id))
+            if (selectedTodo === id){
+                setSelectedTodo(null)
+            }
+        }
+    }
+
+
+    const handleSaveTodo = () => {
+        if(!form.title.trim()){
+            alert("Vui lòng nhập tiêu đề!")
+            return;
+        }
+        const updatedTodos = todos.map((todo) => todo.id === selectedTodo
+        ? {...todo, ...form, status:"PENDING", created_at: todo.created_at} : todo)
+
+        setTodos(updatedTodos)
+        setSelectedTodo(null)
+        setForm({
+            title: "",
+            description: "",
+            due_date: ""
+        })
+    }
+
+    useEffect(() => {
+        if(selectedTodo){
+            const todo = todos.find((t) => t.id === selectedTodo)
+            if(todo){
+                setForm({
+                    title: todo.title,
+                    description: todo.description,
+                    due_date: todo.due_date
+                })
+            }
+        }
+        else {
+            setForm({
+                title: "",
+                description: "",
+                due_date: ""
+            })
+        }
+    }, [selectedTodo, todos]);
 
     return (
         <div className="bg-amber-100 mx-auto max-w-4xl mt-10 p-5">
@@ -91,14 +148,8 @@ function App(){
                 />
                 <div className={"flex justify-between"}>
                     <button className={"bg-emerald-500 w-20 h-11"}
-                    onClick={handleAddTodo}>
-                        Thêm
-                    </button>
-                    <button className={"bg-rose-600 w-20 h-11"}>
-                        Xóa
-                    </button>
-                    <button className={"bg-amber-400 w-20 h-11"}>
-                        Sửa
+                    onClick={selectedTodo?handleSaveTodo:handleAddTodo}>
+                        {selectedTodo?"Lưu" : "Thêm"}
                     </button>
                 </div>
             </div>
@@ -107,7 +158,12 @@ function App(){
                 {todos.map((todo) =>(
                     <div
                         key={todo.id}
-                        className={""}
+                        className={`p-4 rounded-lg cursor-pointer border transition-all duration-200
+        ${selectedTodo === todo.id
+                            ? "bg-blue-200 border-blue-500 shadow-md"
+                            : "bg-white border-gray-300"}
+        hover:bg-gray-100`}
+                        onClick={() => handleSelectTodo(todo.id)}
                     >
                         <div className={"relative text-2xl font-bold"}>{todo.title}
                             <span
@@ -115,10 +171,20 @@ function App(){
                         </div>
                         <div>{todo.description}</div>
                         <div>due: {todo.due_date} | creat_at: {todo.created_at}</div>
-                        <button className={`p-3 w-40 mt-3 ${todo.status === "DONE" ? "bg-green-400" : "bg-yellow-300"}`}
-                        onClick={() =>toggleStatus(todo.id)}>
-                            {todo.status === "DONE" ? "Tiếp tục" : "Hoàn thành"}
-                        </button>
+                        <div className={"flex justify-between"}>
+                            <button
+                                className={`p-3 w-40 mt-3 ${todo.status === "DONE" ? "bg-green-400" : "bg-yellow-300"}`}
+                                onClick={() => toggleStatus(todo.id)}>
+                                {todo.status === "DONE" ? "Tiếp tục" : "Hoàn thành"}
+                            </button>
+                            <button className={"bg-rose-600 w-20 h-11"}
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Để tránh việc click vào todo cũng chọn todo
+                                        handleDeleteTodo(todo.id);
+                                    }}>
+                                Xóa
+                            </button>
+                        </div>
 
                     </div>
                 ))}
